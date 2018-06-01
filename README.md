@@ -2,7 +2,7 @@
 
 ## Description
 The project provides REST API for getting the current temperature from `DS18B20` sensore. The sensore should be set already.
-For the momnet it works with only one connected sensore.
+Retrieve all data from the connected sensores
 
 ## OS
 Linux
@@ -32,9 +32,17 @@ https://hackernoon.com/mastering-elixir-releases-with-distillery-a-pretty-comple
 `mix test`
 
 
-## API calls
+## Examples
+
+### Request
 
 ```
 curl 'your_ip_address:8800/get_temperature'
 
+```
+
+### Response
+
+```
+{"response":{"status":"ok","sensores":[{"timestamp":1527852670715,"status":"ok","sensore_resp":24.4,"sensore_id":"28-000005e06ac0"}],"resp_msg":"ok"}}
 ```
