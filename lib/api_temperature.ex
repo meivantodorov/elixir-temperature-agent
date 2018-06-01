@@ -5,20 +5,19 @@ defmodule API.Temperature do
   @root_dir "/sys/devices/w1_bus_master1"
   @one_wire "w1_slave"
 
-  @no_sensores_found "no sensores found"
-  @general_error "something when wrong"
+  @no_sensores_found "No sensores found"
+  @general_error "General error"
 
   get "get_temperature", do: process(conn)
 
   def process(conn) do
     with {:ok, all_sensores} <- get_all_sensores(),
-         {:ok, temperature} <- get_temperature(all_sensores),
-         {:ok, response} <- build_response(conn, temperature) do
-      {:ok, response}
-      response
+         {:ok, all_temperatures} <- get_all_temperatures(all_sensores),
+         {:ok, sensores_responses} <- build_sensores_responses(all_temperatures) do
+      json(conn, build_general_response(:ok, :ok, sensores_responses))
     else
       {:error, reason} ->
-        build_response(conn, reason)
+        json(conn, build_general_response(:error, reason, []))
     end
   end
 
@@ -37,37 +36,80 @@ defmodule API.Temperature do
     end
   end
 
-  @spec get_temperature(list()) :: {:ok, float()} | {:error, term()}
-  defp get_temperature(sensores_dir) do
-    try do
-      File.read!(Path.join(Path.join(@root_dir, sensores_dir), @one_wire))
-      |> String.split("t=")
-      |> Enum.at(1)
-      |> String.replace("\n", "")
-      |> String.to_integer()
-      |> Kernel./(1)
-      |> Kernel./(1000)
-      |> validate_temperature()
-    rescue
-      _ ->
-        {:error, "could not get the temperature"}
+  @spec get_all_temperatures(list()) :: list()
+  defp get_all_temperatures(sensores), do: get_all_temperatures(sensores, [])
+
+  @spec get_all_temperatures(list(), list()) :: {:ok, list()} | {:error, term()}
+  defp get_all_temperatures([sensore | sensores], acc) do
+    case get_temperature(sensore) do
+      {:ok, temperature} ->
+        get_all_temperatures(sensores, [{sensore, {:ok, temperature}} | acc])
+
+      {:error, _} ->
+        get_all_temperatures(sensores, [{sensore, {:error, :invalid_data}} | acc])
     end
   end
 
-  @spec validate_temperature(float() | term()) :: {:ok, float()} | {:error, term()}
-  defp validate_temperature(temp) when is_float(temp), do: {:ok, temp}
-  defp validate_temperature(_), do: {:error, "invalid temperature"}
+  defp get_all_temperatures([], [_|_] = acc), do: {:ok, acc}
+  defp get_all_temperatures(_, _), do: {:error, @no_sensores_found}
 
-  defp build_response(conn, temperature) when is_float(temperature) do
-    {:ok, json(conn, %{status: :ok,
-                       response: temperature,
-                       timestamp: :os.system_time(:millisecond)})}
+  @spec get_temperature(String.t()) :: {:ok, float()} | {:error, :invalid_data}
+  def get_temperature(sensore_dir) do
+
+    try do
+      temperature =
+        File.read!(Path.join(Path.join(@root_dir, sensore_dir), @one_wire))
+        |> String.split("t=")
+        |> Enum.at(1)
+        |> String.replace("\n", "")
+        |> String.to_integer()
+        |> Kernel./(1)
+        |> Kernel./(1000)
+
+      {:ok, temperature}
+    rescue
+      _ ->
+        {:error, :invalid_data}
+    end
   end
 
-  defp build_response(conn, error) do
-    {:error, json(conn, %{status: :error,
-                          response: error,
-                          timestamp: :os.system_time(:millisecond)})}
+  @spec build_sensores_responses(list()) :: {:ok, list(map())}
+  defp build_sensores_responses(all_responses) do
+    {:ok, Enum.reduce(all_responses, [],
+        fn({sensore, response}, acc) ->
+          [build_sensore_response(sensore, response) | acc]
+        end)}
   end
+
+  @spec build_sensore_response(String.t(), {:ok | :error, term()}) :: map()
+  defp build_sensore_response(sensore, {status, data}) do
+    %{status: status,
+      sensore_id: sensore,
+      sensore_resp: data,
+      timestamp: :os.system_time(:millisecond)
+    }
+  end
+
+  @spec build_general_response(:ok | :error, term(), list(map())) :: map()
+  defp build_general_response(:error, resp_msg, sensores) do
+    general_response(:error, resp_msg, sensores)
+  end
+
+  defp build_general_response(:ok, resp_msg, sensores) do
+    {status, resp_msg} =
+     if Enum.all?(sensores, fn(%{status: status}) -> status == :ok end) do
+      {:ok, resp_msg}
+    else
+      {:error, "Invalid data from one or more sensores"}
+    end
+    general_response(status, resp_msg, sensores)
+  end
+
+  defp general_response(status, resp_msg, sensores) do
+    %{response: %{status: status,
+                  resp_msg: resp_msg,
+                  sensores: sensores}
+    }
+    end
 
 end

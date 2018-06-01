@@ -2,12 +2,14 @@ defmodule TemperatureEmbeddedAgent.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :temperature_embedded_agent,
-     version: "0.1.0",
-     elixir: "~> 1.4",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps()]
+    [
+      app: :temperature_embedded_agent,
+      version: "0.1.0",
+      elixir: "~> 1.4",
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
   end
 
   # Configuration for the OTP application
@@ -28,8 +30,6 @@ defmodule TemperatureEmbeddedAgent.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:maru, "~> 0.10"},
-     {:distillery, "~> 1.5"},
-     {:json, "~> 1.0"}]
+    [{:maru, "~> 0.10"}, {:distillery, "~> 1.5"}, {:json, "~> 1.0"}]
   end
 end

@@ -4,5 +4,4 @@ use Mix.Config
 
 use Mix.Config
 
-config :maru, API.Temperature,
-  http: [port: 8800, ip: {0,0,0,0}]
+config :maru, API.Temperature, http: [port: 8800, ip: {0, 0, 0, 0}]
