@@ -44,5 +44,16 @@ curl 'your_ip_address:8800/get_temperature'
 ### Response
 
 ```
-{"response":{"status":"ok","sensores":[{"timestamp":1527852670715,"status":"ok","sensore_resp":24.4,"sensore_id":"28-000005e06ac0"}],"resp_msg":"ok"}}
+{
+  "response": {
+      "status": "ok",
+      "sensores": [{
+          "timestamp": 1527852670715,
+          "status": "ok",
+          "sensore_resp": 24.4,
+          "sensore_id": "28-000005e06ac0"
+       }],
+       "resp_msg": "ok"
+   }
+}
 ```
