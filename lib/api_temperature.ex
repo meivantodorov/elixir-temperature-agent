@@ -22,9 +22,9 @@ defmodule API.Temperature do
   end
 
   @spec get_all_sensores() :: {:ok, list()} | {:error, term()}
-  defp get_all_sensores() do
+  def get_all_sensores() do
     all_folders = File.ls!(@root_dir)
-    case Enum.drop_while(all_folders, fn(d) -> !String.match?(d, ~r/28-/) end) do
+    case Enum.filter(all_folders, fn(d) -> String.starts_with?(d, "28-") end) do
       [] ->
         {:error, @no_sensores_found}
 
@@ -37,10 +37,10 @@ defmodule API.Temperature do
   end
 
   @spec get_all_temperatures(list()) :: list()
-  defp get_all_temperatures(sensores), do: get_all_temperatures(sensores, [])
+  def get_all_temperatures(sensores), do: get_all_temperatures(sensores, [])
 
   @spec get_all_temperatures(list(), list()) :: {:ok, list()} | {:error, term()}
-  defp get_all_temperatures([sensore | sensores], acc) do
+  def get_all_temperatures([sensore | sensores], acc) do
     case get_temperature(sensore) do
       {:ok, temperature} ->
         get_all_temperatures(sensores, [{sensore, {:ok, temperature}} | acc])
@@ -50,8 +50,8 @@ defmodule API.Temperature do
     end
   end
 
-  defp get_all_temperatures([], [_|_] = acc), do: {:ok, acc}
-  defp get_all_temperatures(_, _), do: {:error, @no_sensores_found}
+  def get_all_temperatures([], [_|_] = acc), do: {:ok, acc}
+  def get_all_temperatures(_, _), do: {:error, @no_sensores_found}
 
   @spec get_temperature(String.t()) :: {:ok, float()} | {:error, :invalid_data}
   def get_temperature(sensore_dir) do
@@ -74,7 +74,7 @@ defmodule API.Temperature do
   end
 
   @spec build_sensores_responses(list()) :: {:ok, list(map())}
-  defp build_sensores_responses(all_responses) do
+  def build_sensores_responses(all_responses) do
     {:ok, Enum.reduce(all_responses, [],
         fn({sensore, response}, acc) ->
           [build_sensore_response(sensore, response) | acc]
@@ -91,11 +91,11 @@ defmodule API.Temperature do
   end
 
   @spec build_general_response(:ok | :error, term(), list(map())) :: map()
-  defp build_general_response(:error, resp_msg, sensores) do
+  def build_general_response(:error, resp_msg, sensores) do
     general_response(:error, resp_msg, sensores)
   end
 
-  defp build_general_response(:ok, resp_msg, sensores) do
+  def build_general_response(:ok, resp_msg, sensores) do
     {status, resp_msg} =
      if Enum.all?(sensores, fn(%{status: status}) -> status == :ok end) do
       {:ok, resp_msg}
@@ -105,11 +105,11 @@ defmodule API.Temperature do
     general_response(status, resp_msg, sensores)
   end
 
-  defp general_response(status, resp_msg, sensores) do
+  def general_response(status, resp_msg, sensores) do
     %{response: %{status: status,
                   resp_msg: resp_msg,
                   sensores: sensores}
     }
-    end
+  end
 
 end
