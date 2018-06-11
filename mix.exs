@@ -30,6 +30,6 @@ defmodule TemperatureEmbeddedAgent.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:maru, "~> 0.10"}, {:distillery, "~> 1.5"}, {:json, "~> 1.0"}]
+    [{:maru, "~> 0.10"}, {:distillery, "~> 1.5"}, {:json, "~> 1.0"}, {:calendar, "~> 0.17.2"}]
   end
 end
